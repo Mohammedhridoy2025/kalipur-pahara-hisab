@@ -1,0 +1,7 @@
+{
+  "name": "kalipur-manager",
+  "description": "A comprehensive village watchman fund management system for tracking expatriate contributions, expenses, and automated reports.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
