@@ -1,4 +1,5 @@
 {
+  "name": "kalipur-pahara-hisab",
   "rewrites": [
     {
       "source": "/(.*)",
