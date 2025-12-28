@@ -123,3 +123,6 @@ dist-ssr
 # OS Metadata
 .DS_Store
 Thumbs.db
+
+# Vercel
+.vercel/

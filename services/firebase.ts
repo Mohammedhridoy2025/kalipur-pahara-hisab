@@ -1,3 +1,4 @@
+
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 import "firebase/compat/firestore";
@@ -20,6 +21,28 @@ if (!firebase.apps.length) {
 
 // Initialize Services
 export const db = firebase.firestore();
+
+// ENHANCEMENT: Fix Firestore settings conflict and host override warnings
+try {
+  /**
+   * We removed 'experimentalForceLongPolling: true' to prevent conflict 
+   * with 'experimentalAutoDetectLongPolling' which is default in many environments.
+   * 'merge: true' is kept as suggested by Firebase 12.6.0 warning to preserve original host.
+   */
+  const firestoreSettings: any = {
+    cache: {
+      kind: 'persistent',
+      tabManager: { kind: 'multiple' }
+    },
+    merge: true 
+  };
+  
+  db.settings(firestoreSettings);
+} catch (e) {
+  // Gracefully handle if settings are already applied
+  console.debug("Firestore settings application skip:", e);
+}
+
 export const auth = firebase.auth();
 
 // Collection References

@@ -170,7 +170,6 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
     setCustomDate(new Date().toLocaleDateString('bn-BD'));
   };
 
-  // Check for duplicate entry based on MemberID + Month
   const isDuplicateSelection = useMemo(() => {
     if (!selectedMember) return false;
     return subscriptions.some(s => 
@@ -188,35 +187,14 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
       return;
     }
 
-    // STRICT duplicate prevention
     if (isDuplicateSelection) {
-      alert(`দুঃখিত! এই সদস্য (${getMemberName(selectedMember)}) আগেই ${getBengaliMonthName(month)} মাসের চাঁদা পরিশোধ করেছেন।\n\nএকই মাসে একই সদস্যের দুইবার এন্ট্রি নেওয়া যাবে না।`);
+      alert(`দুঃখিত! এই সদস্য আগেই এই মাসের চাঁদা পরিশোধ করেছেন।`);
       return;
     }
 
     const customDocId = `${selectedMember}_${month}`;
 
     try {
-      // Milestone Calculation Logic
-      if (!editingId && addNotification) {
-         const currentTotal = subscriptions
-            .filter(s => s.memberId === selectedMember)
-            .reduce((sum, s) => sum + s.amount, 0);
-         
-         const newTotal = currentTotal + amount;
-         const milestone = 5000;
-
-         // Check if a 5000 BDT milestone is crossed
-         if (Math.floor(newTotal / milestone) > Math.floor(currentTotal / milestone)) {
-           const milestoneAmount = Math.floor(newTotal / milestone) * milestone;
-           addNotification(
-             'success', 
-             'অভিনন্দন! বিশেষ মাইলফলক', 
-             `${getMemberName(selectedMember)} মোট ${milestoneAmount.toLocaleString()} টাকার মাইলফলক স্পর্শ করেছেন!`
-           );
-         }
-      }
-
       const subData = { 
         memberId: selectedMember, 
         amount, 
@@ -236,8 +214,6 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
         fetchQuote(getMemberName(selectedMember));
         setIsReceiptOpen(true);
         if (addNotification) addNotification('success', 'চাঁদা জমা হয়েছে', 'নতুন কালেকশন সফলভাবে এন্ট্রি হয়েছে।');
-      } else {
-        if (addNotification) addNotification('success', 'সংশোধন সফল', 'রেকর্ডটি আপডেট করা হয়েছে।');
       }
 
       handleCancelEdit();
@@ -261,27 +237,16 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
   const downloadReceipt = async () => {
     const element = document.getElementById('printable-receipt');
     if (!element) return;
-    
     setIsDownloading(true);
     try {
-      const canvas = await html2canvas(element, {
-        scale: 3, 
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true
-      });
-      
+      const canvas = await html2canvas(element, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
       const image = canvas.toDataURL("image/png", 1.0);
       const link = document.createElement('a');
-      link.download = `Receipt-${lastReceipt?.receiptNo || 'RCP'}.png`;
+      link.download = `Receipt-${lastReceipt?.receiptNo}.png`;
       link.href = image;
       link.click();
-    } catch (err) {
-      console.error('Download error:', err);
-      alert('রশিদ ডাউনলোড করতে সমস্যা হয়েছে।');
-    } finally {
-      setIsDownloading(false);
-    }
+    } catch (err) { alert('রশিদ ডাউনলোড করতে সমস্যা হয়েছে।'); }
+    finally { setIsDownloading(false); }
   };
 
   const SortIcon = ({ column }: { column: SortKey }) => {
@@ -291,19 +256,14 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
 
   const paidMemberIds = useMemo(() => {
     const ids = new Set<string>();
-    subscriptions.forEach(s => {
-      if (s.month === month && s.id !== editingId) {
-        ids.add(s.memberId);
-      }
-    });
+    subscriptions.forEach(s => { if (s.month === month && s.id !== editingId) ids.add(s.memberId); });
     return ids;
   }, [subscriptions, month, editingId]);
 
   const filteredMembers = useMemo(() => {
     return members.filter(m => {
        const searchLower = memberSearchTerm.toLowerCase();
-       const matchesSearch = m.name.toLowerCase().includes(searchLower) ||
-                             m.houseName.toLowerCase().includes(searchLower);
+       const matchesSearch = m.name.toLowerCase().includes(searchLower) || m.houseName.toLowerCase().includes(searchLower);
        const isPaid = paidMemberIds.has(m.id);
        return matchesSearch && !isPaid;
     });
@@ -311,438 +271,201 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
 
   return (
     <div className="space-y-10">
-      {/* Form Section - Only visible to Admins */}
-      {isAdmin ? (
-        <div className="relative no-print">
-          <div className="absolute inset-0 bg-emerald-600 h-32 rounded-[3rem] -z-10 opacity-10"></div>
-          <div className={`bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border-2 max-w-4xl mx-auto transition-all ${editingId ? 'border-blue-500 ring-4 ring-blue-50' : 'border-emerald-50 shadow-emerald-100/50'}`}>
+      {/* Form Section */}
+      {isAdmin && (
+        <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border-2 border-emerald-50 max-w-4xl mx-auto no-print">
             <div className="flex flex-col items-center text-center mb-10">
-              <div className={`w-20 h-20 text-white rounded-3xl flex items-center justify-center shadow-xl mb-4 transition-colors ${editingId ? 'bg-blue-600 shadow-blue-200' : 'bg-emerald-600 shadow-emerald-200'}`}>
+              <div className="w-20 h-20 bg-emerald-600 text-white rounded-3xl flex items-center justify-center shadow-xl mb-4">
                 <Banknote size={40} />
               </div>
-              <h2 className="text-3xl font-black text-gray-800 tracking-tight">
-                {editingId ? 'চাঁদা এন্ট্রি সংশোধন' : 'চাঁদা জমা ফরম'}
-              </h2>
-              <p className={`${editingId ? 'text-blue-600' : 'text-emerald-600'} font-bold mt-1 uppercase tracking-widest text-xs`}>
-                {editingId ? 'বিদ্যমান রেকর্ড আপডেট করুন' : 'কালেকশন ডাটাবেজ আপডেট করুন'}
-              </p>
+              <h2 className="text-3xl font-black text-gray-800 tracking-tight">{editingId ? 'সংশোধন' : 'চাঁদা জমা ফরম'}</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-600 uppercase tracking-widest px-2">
-                  <Calendar size={14} className={editingId ? 'text-blue-500' : 'text-emerald-500'} /> চাঁদার মাস
-                </label>
-                <input 
-                  type="month" 
-                  min={MIN_MONTH} 
-                  className={`w-full p-5 bg-white border border-gray-200 rounded-[1.5rem] font-bold text-gray-800 outline-none transition-all shadow-inner focus:ring-2 ${editingId ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'}`} 
-                  value={month} 
-                  onChange={e => setMonth(e.target.value)} 
-                />
+                <label className="text-xs font-black text-gray-500 uppercase px-2">চাঁদার মাস</label>
+                <input type="month" min={MIN_MONTH} className="w-full p-5 bg-white border border-gray-200 rounded-2xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all" value={month} onChange={e => setMonth(e.target.value)} />
               </div>
 
               <div className="space-y-2 relative" ref={dropdownRef}>
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-600 uppercase tracking-widest px-2">
-                  <User size={14} className={editingId ? 'text-blue-500' : 'text-emerald-500'} /> সদস্য নির্বাচন
-                </label>
-                <div className="relative group">
-                  <input 
-                    ref={searchInputRef}
-                    type="text" 
-                    placeholder="নাম অথবা বাড়ি..." 
-                    className={`w-full p-5 bg-white border border-gray-200 rounded-[1.5rem] font-bold text-gray-800 outline-none transition-all shadow-inner pl-12 pr-12 focus:ring-2 ${editingId ? 'focus:ring-blue-500' : (isDuplicateSelection ? 'border-rose-300 bg-rose-50' : 'focus:ring-emerald-500')}`} 
-                    value={memberSearchTerm} 
-                    onChange={e => {
-                      setMemberSearchTerm(e.target.value);
-                      setIsDropdownOpen(true);
-                      if (selectedMember) setSelectedMember('');
-                    }}
-                    onFocus={() => setIsDropdownOpen(true)}
-                  />
+                <label className="text-xs font-black text-gray-500 uppercase px-2">সদস্য নির্বাচন</label>
+                <div className="relative">
+                  <input type="text" placeholder="নাম অথবা বাড়ি..." className="w-full p-5 bg-white border border-gray-200 rounded-2xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all pl-12" value={memberSearchTerm} onChange={e => { setMemberSearchTerm(e.target.value); setIsDropdownOpen(true); if (selectedMember) setSelectedMember(''); }} onFocus={() => setIsDropdownOpen(true)} />
                   <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <ChevronDown size={20} className={isDropdownOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                  </button>
                 </div>
                 
                 {isDropdownOpen && (
-                  <div className={`absolute top-full left-0 right-0 mt-3 bg-white border border-gray-200 rounded-[1.5rem] shadow-2xl z-[100] max-h-72 overflow-y-auto p-2 border-t-4 ${editingId ? 'border-t-blue-500' : 'border-t-emerald-500'}`}>
-                    {filteredMembers.length > 0 ? (
-                      filteredMembers.map(m => (
-                        <button key={m.id} type="button" className={`w-full text-left px-5 py-4 rounded-xl mb-1 flex justify-between items-center transition-all ${selectedMember === m.id ? (editingId ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white') : 'hover:bg-emerald-50 text-gray-700'}`} onClick={() => { setSelectedMember(m.id); setMemberSearchTerm(m.name); setIsDropdownOpen(false); setTimeout(() => amountRef.current?.focus(), 100); }}>
-                          <div>
-                            <div className="font-black text-base">{m.name}</div>
-                            <div className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${selectedMember === m.id ? 'text-white opacity-80' : 'text-gray-500'}`}>
-                              <Home size={10} /> {m.houseName}
-                            </div>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-gray-500 text-sm font-bold">
-                        {memberSearchTerm ? 'কোনো সদস্য পাওয়া যায়নি' : 'এই মাসের জন্য সব সদস্যের চাঁদা পরিশোধিত!'}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {selectedMember && (
-                  <div className={`mt-4 p-4 border rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2 ${isDuplicateSelection ? 'bg-rose-50 border-rose-200' : (editingId ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100')}`}>
-                    <div className={`w-12 h-12 text-white rounded-xl flex items-center justify-center ${isDuplicateSelection ? 'bg-rose-500' : (editingId ? 'bg-blue-600' : 'bg-emerald-600')}`}>
-                      {isDuplicateSelection ? <AlertOctagon size={24} /> : <ShieldCheck size={24} />}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-base font-black text-gray-900 leading-tight">{getMemberName(selectedMember)}</h4>
-                      {isDuplicateSelection ? (
-                        <p className="text-xs font-black text-rose-600 flex items-center gap-1 mt-1">
-                          <AlertTriangle size={12} /> এই মাসের টাকা পরিশোধিত!
-                        </p>
-                      ) : (
-                        <p className="text-xs font-bold text-gray-600 flex items-center gap-1">
-                          <MapPin size={12} className="text-rose-500" /> {getMemberHouse(selectedMember)}
-                        </p>
-                      )}
-                    </div>
+                  <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-gray-200 rounded-2xl shadow-2xl z-[100] max-h-72 overflow-y-auto p-2">
+                    {filteredMembers.map(m => (
+                      <button key={m.id} type="button" className="w-full text-left px-5 py-4 rounded-xl mb-1 hover:bg-emerald-50" onClick={() => { setSelectedMember(m.id); setMemberSearchTerm(m.name); setIsDropdownOpen(false); }}>
+                        <div className="font-black text-base">{m.name}</div>
+                        <div className="text-[10px] font-bold text-gray-500 uppercase">{m.houseName}</div>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-600 uppercase tracking-widest px-2">
-                  <UserCheck size={14} className={editingId ? 'text-blue-500' : 'text-emerald-500'} /> আদায়কারী
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="আদায়কারীর নাম"
-                  className={`w-full p-5 bg-white border border-gray-200 rounded-[1.5rem] font-bold text-gray-800 outline-none transition-all shadow-inner focus:ring-2 ${editingId ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'}`} 
-                  value={receivedBy} 
-                  onChange={e => setReceivedBy(e.target.value)} 
-                />
+                <label className="text-xs font-black text-gray-500 uppercase px-2">টাকার পরিমাণ</label>
+                <input type="number" placeholder="৳" className="w-full p-5 border-2 border-emerald-100 rounded-2xl font-black text-3xl outline-none text-center focus:border-emerald-500 text-emerald-700" value={amount || ''} onChange={e => setAmount(Number(e.target.value))} />
               </div>
 
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-600 uppercase tracking-widest px-2">
-                  <CircleDollarSign size={14} className={editingId ? 'text-blue-500' : 'text-emerald-500'} /> টাকার পরিমাণ
-                </label>
-                <div className="relative">
-                  <span className={`absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black ${editingId ? 'text-blue-300' : 'text-emerald-300'}`}>৳</span>
-                  <input 
-                    ref={amountRef}
-                    type="number" 
-                    placeholder="0.00" 
-                    className={`w-full p-5 border-2 rounded-[1.5rem] font-black text-3xl outline-none transition-all pl-14 text-center shadow-lg bg-white ${editingId ? 'border-blue-100 focus:border-blue-500 text-blue-700' : 'border-emerald-100 focus:border-emerald-500 text-emerald-700'}`} 
-                    value={amount || ''} 
-                    onChange={e => setAmount(Number(e.target.value))} 
-                  />
-                </div>
-              </div>
-
-              {/* ENHANCED BUTTON GROUP */}
-              <div className="md:col-span-2 flex flex-col md:flex-row gap-5 pt-6">
-                <button 
-                  type="submit" 
-                  disabled={!selectedMember || amount <= 0 || isDuplicateSelection} 
-                  className={`
-                    relative flex-1 py-5 rounded-[2rem] font-black text-xl transition-all duration-300
-                    flex items-center justify-center gap-3 group overflow-hidden active:scale-[0.97]
-                    disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:transform-none disabled:border-none
-                    ${editingId 
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl shadow-blue-200 hover:shadow-2xl hover:shadow-blue-300 border-b-[6px] border-blue-900 active:border-b-0' 
-                      : (isDuplicateSelection 
-                          ? 'bg-rose-100 text-rose-400 cursor-not-allowed border-none shadow-none' 
-                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-200 hover:shadow-2xl hover:shadow-emerald-300 border-b-[6px] border-emerald-900 active:border-b-0')
-                    }
-                  `}
-                >
-                  {/* Subtle Shine Effect */}
-                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  
-                  <span className="relative flex items-center gap-3 drop-shadow-lg transition-transform group-hover:scale-105">
-                    {isDuplicateSelection 
-                      ? <><AlertOctagon size={28} /> এন্ট্রি সম্ভব নয়</> 
-                      : (editingId 
-                          ? <><CheckCircle2 size={28} className="group-hover:rotate-12 transition-transform" /> তথ্য আপডেট করুন</> 
-                          : <><Send size={28} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> জমা নিশ্চিত করুন</>)
-                    }
-                  </span>
+              <div className="md:col-span-2">
+                <button type="submit" disabled={!selectedMember || amount <= 0 || isDuplicateSelection} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-xl shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3">
+                  <Send size={24} /> জমা নিশ্চিত করুন
                 </button>
-                
-                {editingId && (
-                  <button 
-                    type="button" 
-                    onClick={handleCancelEdit} 
-                    className="relative flex-1 py-5 bg-white border-2 border-gray-200 text-gray-500 rounded-[2rem] font-black text-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.97] shadow-sm hover:shadow-md"
-                  >
-                    <RotateCcw size={24} className="group-hover:rotate-[-45deg] transition-transform" />
-                    বাতিল করুন
-                  </button>
-                )}
               </div>
             </form>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-[2rem] p-8 text-center border-2 border-emerald-50 shadow-sm no-print">
-           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-             <Lock size={32} />
-           </div>
-           <h2 className="text-xl font-black text-gray-800">ভিউ অনলি মোড</h2>
-           <p className="text-gray-500 mt-2">নতুন চাঁদা এন্ট্রি করতে দয়া করে অ্যাডমিন হিসেবে লগইন করুন।</p>
         </div>
       )}
 
       {/* Record Table */}
       <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-200 overflow-hidden no-print">
-        <div className="p-8 bg-gray-50/50 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">চাঁদা আদায়ের রেকর্ড</h3>
-          <div className="text-xs font-black text-gray-500 uppercase tracking-widest border border-gray-300 px-3 py-1 rounded-full bg-white">সর্বশেষ তালিকা</div>
-        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-xs font-black text-gray-600 uppercase tracking-widest border-b border-gray-200">
               <tr>
-                <th className="px-8 py-5 cursor-pointer" onClick={() => handleSort('memberName')}>নাম ও বাড়ি <SortIcon column="memberName" /></th>
-                <th className="px-8 py-5 cursor-pointer" onClick={() => handleSort('month')}>চাঁদার মাস <SortIcon column="month" /></th>
-                <th className="px-8 py-5 text-center cursor-pointer" onClick={() => handleSort('amount')}>পরিমাণ <SortIcon column="amount" /></th>
+                <th className="px-8 py-5">নাম ও বাড়ি</th>
+                <th className="px-8 py-5">চাঁদার মাস</th>
+                <th className="px-8 py-5 text-center">পরিমাণ</th>
                 <th className="px-8 py-5 text-right">অ্যাকশন</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {sortedSubscriptions.map(sub => (
-                <tr key={sub.id} className={`transition-all ${editingId === sub.id ? 'bg-blue-50 ring-2 ring-blue-200 ring-inset' : 'hover:bg-gray-50/80'}`}>
+                <tr key={sub.id} className="hover:bg-gray-50/80 transition-all">
                   <td className="px-8 py-5">
-                    <div className="font-black text-gray-900 text-lg leading-tight">{getMemberName(sub.memberId)}</div>
-                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-0.5">{getMemberHouse(sub.memberId)}</div>
+                    <div className="font-black text-gray-900 text-lg">{getMemberName(sub.memberId)}</div>
+                    <div className="text-xs font-bold text-gray-500 uppercase mt-0.5">{getMemberHouse(sub.memberId)}</div>
                   </td>
-                  <td className="px-8 py-5">
-                    <span className={`text-xs font-black px-4 py-1.5 rounded-full uppercase ${editingId === sub.id ? 'bg-blue-600 text-white' : 'bg-emerald-100 text-emerald-800'}`}>
-                      {getBengaliMonthName(sub.month)}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 text-center font-black text-2xl text-emerald-800 tracking-tighter">৳{sub.amount.toLocaleString()}</td>
-                  <td className="px-8 py-5 text-right">
-                    <div className="flex justify-end gap-3">
-                      <button onClick={() => { setLastReceipt(sub); setIsReceiptOpen(true); fetchQuote(getMemberName(sub.memberId)); }} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100"><Printer size={20} /></button>
-                      
-                      {isAdmin ? (
-                        <>
-                          <button onClick={() => startEdit(sub)} className={`p-3 rounded-xl transition-all shadow-sm border ${editingId === sub.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-600 hover:text-white'}`}><Edit2 size={20} /></button>
-                          <button onClick={() => setConfirmDeleteId(sub.id)} disabled={isDeleting === sub.id} className="p-3 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100">
-                            {isDeleting === sub.id ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />}
-                          </button>
-                        </>
-                      ) : (
-                        <div className="p-3 opacity-30">
-                          <Lock size={20} />
-                        </div>
-                      )}
-                    </div>
+                  <td className="px-8 py-5"><span className="text-xs font-black px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800">{getBengaliMonthName(sub.month)}</span></td>
+                  <td className="px-8 py-5 text-center font-black text-2xl text-emerald-800">৳{sub.amount.toLocaleString()}</td>
+                  <td className="px-8 py-5 text-right flex justify-end gap-3">
+                    <button onClick={() => { setLastReceipt(sub); setIsReceiptOpen(true); fetchQuote(getMemberName(sub.memberId)); }} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Printer size={20} /></button>
+                    {isAdmin && (
+                      <button onClick={() => setConfirmDeleteId(sub.id)} className="p-3 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-600 hover:text-white transition-all"><Trash2 size={20} /></button>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {sortedSubscriptions.length === 0 && (
-            <div className="p-32 text-center text-gray-400 font-bold italic uppercase tracking-widest text-sm">কোনো চাঁদার রেকর্ড পাওয়া যায়নি</div>
-          )}
         </div>
       </div>
 
-      {/* --- CONFIRM DELETE MODAL --- */}
-      {confirmDeleteId && isAdmin && (
-         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[500] animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative animate-in zoom-in duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mb-4">
-                <Trash2 size={32} />
-              </div>
-              <h3 className="text-xl font-black text-gray-800 mb-2">চাঁদা রেকর্ড মুছে ফেলতে চান?</h3>
-              <p className="text-gray-500 font-medium text-sm mb-8">
-                চিন্তা করবেন না, এটি চিরতরে মুছে যাবে না। এটি <span className="text-rose-600 font-bold">রিসাইকেল বিনে</span> জমা থাকবে, যেখান থেকে আপনি চাইলে আবার ফিরিয়ে আনতে পারবেন।
-              </p>
-              
-              <div className="flex gap-3 w-full">
-                <button 
-                  onClick={() => setConfirmDeleteId(null)} 
-                  disabled={!!isDeleting}
-                  className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-xl font-black text-sm hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
-                >
-                  <XCircle size={18} /> বাতিল
-                </button>
-                <button 
-                  onClick={handleDelete}
-                  disabled={!!isDeleting}
-                  className="flex-1 py-4 bg-rose-600 text-white rounded-xl font-black text-sm hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all flex items-center justify-center gap-2"
-                >
-                  {isDeleting ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
-                  {isDeleting ? 'মুছে ফেলা হচ্ছে...' : 'হ্যাঁ, মুছে ফেলুন'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- RECEIPT MODAL (Screen View) --- */}
+      {/* --- RECEIPT ENGINE (PRINT & SCREEN) --- */}
       {isReceiptOpen && lastReceipt && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center p-4 z-[300] no-print overflow-y-auto">
            <div className="bg-white rounded-[1.5rem] w-full max-w-sm shadow-2xl overflow-hidden relative animate-in zoom-in duration-300 my-4">
-            <div className="absolute top-4 right-4 flex gap-2 no-print">
-              <button 
-                onClick={downloadReceipt} 
-                disabled={isDownloading}
-                className="p-3 bg-blue-600 text-white rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5 font-black uppercase text-[10px] tracking-widest disabled:bg-gray-400"
-              >
-                {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                {isDownloading ? 'প্রসেসিং...' : 'ডাউনলোড PNG'}
-              </button>
-              <button onClick={() => window.print()} className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5 font-black uppercase text-[10px] tracking-widest"><Printer size={16} /> প্রিন্ট</button>
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button onClick={downloadReceipt} disabled={isDownloading} className="p-3 bg-blue-600 text-white rounded-xl shadow-lg hover:scale-105 transition-transform"><Download size={16} /></button>
+              <button onClick={() => window.print()} className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:scale-105 transition-transform"><Printer size={16} /></button>
               <button onClick={() => setIsReceiptOpen(false)} className="p-3 bg-gray-100 text-gray-400 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors">✕</button>
             </div>
 
-            <div id="printable-receipt" className="p-6 space-y-3 bg-white border-[6px] border-emerald-50 m-1.5 rounded-[1rem] flex flex-col">
-              <div className="text-center space-y-1.5 border-b border-emerald-600/30 pb-3">
-                <div className="flex justify-center mb-0.5">
-                  <ShieldCheck size={32} className="text-emerald-700" strokeWidth={2.5} />
-                </div>
-                <h1 className="text-base font-black text-emerald-900 tracking-tight leading-none uppercase">কালিপুর পাহারাদার কল্যাণ তহবিল</h1>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[8px] font-black text-emerald-800 bg-emerald-50 px-3 py-0.5 rounded-full uppercase border border-emerald-100">আর্থিক সহযোগিতায় কালিপুর প্রবাসীগন</span>
-                  <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest leading-none">{FIXED_ADDRESS}</span>
-                </div>
+            <div id="printable-receipt" className="p-6 space-y-4 bg-white border-[8px] border-emerald-50 m-2 rounded-[1rem]">
+              <div className="text-center space-y-1.5 border-b-2 border-emerald-600/20 pb-4">
+                <ShieldCheck size={40} className="text-emerald-700 mx-auto" />
+                <h1 className="text-lg font-black text-emerald-900 leading-none">কালিপুর পাহারাদার কল্যাণ তহবিল</h1>
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{FIXED_ADDRESS}</p>
               </div>
 
-              <div className="space-y-2.5 py-1">
-                <div className="flex justify-between items-center text-[9px] font-black text-gray-600 uppercase tracking-widest border-b border-gray-100 pb-1">
+              <div className="space-y-3.5 py-2">
+                <div className="flex justify-between text-[10px] font-black text-gray-600 uppercase border-b border-gray-100 pb-2">
                   <span>নং: {lastReceipt.receiptNo}</span>
                   <span>তারিখ: {lastReceipt.date}</span>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-end border-b border-dashed border-gray-100 pb-0.5">
-                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">সদস্যের নাম</span>
-                    <span className="text-sm font-black text-gray-900 leading-none">{getMemberName(lastReceipt.memberId)}</span>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-end border-b border-dashed border-gray-100 pb-1">
+                    <span className="text-[10px] font-black text-gray-400 uppercase">সদস্যের নাম</span>
+                    <span className="font-black text-gray-900">{getMemberName(lastReceipt.memberId)}</span>
                   </div>
-                  <div className="flex justify-between items-end border-b border-dashed border-gray-100 pb-0.5">
-                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">বাড়ির নাম</span>
-                    <span className="text-[10px] font-bold text-gray-800 leading-none">{getMemberHouse(lastReceipt.memberId)}</span>
+                  <div className="flex justify-between items-end border-b border-dashed border-gray-100 pb-1">
+                    <span className="text-[10px] font-black text-gray-400 uppercase">বাড়ির নাম</span>
+                    <span className="font-bold text-gray-800">{getMemberHouse(lastReceipt.memberId)}</span>
                   </div>
-                  <div className="flex justify-between items-end border-b border-dashed border-gray-100 pb-0.5">
-                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">চাঁদার মাস</span>
-                    <span className="text-xs font-black text-emerald-700 leading-none">{getBengaliMonthName(lastReceipt.month)}</span>
+                  <div className="flex justify-between items-end border-b border-dashed border-gray-100 pb-1">
+                    <span className="text-[10px] font-black text-gray-400 uppercase">চাঁদার মাস</span>
+                    <span className="font-black text-emerald-700">{getBengaliMonthName(lastReceipt.month)}</span>
                   </div>
                 </div>
 
-                <div className="bg-emerald-600 text-white rounded-lg p-3 text-center shadow-md">
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">পরিশোধিত চাঁদা</p>
-                  <p className="text-2xl font-black tracking-tighter leading-none">৳{lastReceipt.amount.toLocaleString()}</p>
+                <div className="bg-emerald-600 text-white rounded-xl p-4 text-center shadow-lg">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">পরিশোধিত চাঁদা</p>
+                  <p className="text-3xl font-black tracking-tighter">৳{lastReceipt.amount.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 relative">
-                  <Quote size={14} className="absolute -top-1.5 -left-1 text-amber-200" />
-                  {loadingQuote ? (
-                    <div className="flex justify-center py-1"><Loader2 className="animate-spin text-amber-300" size={12} /></div>
-                  ) : (
-                    <p className="text-center font-medium text-amber-900 italic text-[10px] leading-snug">
-                      "{receiptQuote}"
-                    </p>
-                  )}
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center relative italic text-[11px] leading-relaxed text-amber-900 font-medium">
+                  <Quote size={16} className="absolute top-2 left-2 text-amber-200" />
+                  "{receiptQuote || "আপনার অবদান গ্রামের নিরাপত্তায় সংরক্ষিত থাকবে।"}"
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-center items-end border-t border-gray-100 mt-0.5">
+              <div className="pt-8 flex justify-center border-t border-gray-100">
                 <div className="text-center">
-                  <div className="signature-font text-xl text-emerald-800 -mb-1 select-none pointer-events-none opacity-90 rotate-[-2deg]">
-                    {lastReceipt.receivedBy || 'Kawsar'}
-                  </div>
-                  <div className="w-24 h-px bg-gray-300 mx-auto mb-1"></div>
-                  <p className="text-[8px] font-black text-emerald-800 uppercase tracking-wider">আদায়কারী ({lastReceipt.receivedBy || 'কাউছার'})</p>
+                  <div className="signature-font text-2xl text-emerald-800 -mb-1">{lastReceipt.receivedBy || 'Kawsar'}</div>
+                  <div className="w-28 h-px bg-black mx-auto mb-1"></div>
+                  <p className="text-[9px] font-black text-emerald-800 uppercase">আদায়কারী স্বাক্ষর</p>
                 </div>
-              </div>
-
-              <div className="text-center pt-2 mt-0.5 border-t border-gray-50/50">
-                 <p className="text-[8px] text-gray-500 font-bold uppercase tracking-[0.1em] slogan-fix leading-none">
-                    নিরাপদ কালিপুর গড়ার লক্ষে — আপনার আমানত আমাদের দায়িত্ব
-                 </p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- PRINT ONLY LAYOUT --- */}
-      {lastReceipt && (
-        <div className="hidden print:block fixed inset-0 bg-white z-[1000] p-8">
-            <div className="border-[3px] border-black p-8 h-full rounded-2xl relative">
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-                    <ShieldCheck size={400} />
-                </div>
-
-                <div className="text-center mb-8 border-b-[3px] border-double border-black pb-6">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                        <ShieldCheck size={48} className="text-black" />
-                        <h1 className="text-4xl font-black text-black uppercase">কালিপুর পাহারাদার কল্যাণ তহবিল</h1>
-                    </div>
-                    <p className="text-lg font-bold text-gray-600">{FIXED_ADDRESS}</p>
-                    <div className="inline-block mt-4 px-6 py-1 border-2 border-black bg-gray-100 text-black rounded-full text-sm font-bold uppercase tracking-widest">টাকা জমার রশিদ</div>
-                </div>
-
-                <div className="flex justify-between items-start mb-8">
-                    <div className="space-y-1">
-                        <p className="font-bold text-gray-600">রশিদ নং:</p>
-                        <p className="font-black text-xl text-black">{lastReceipt.receiptNo}</p>
-                    </div>
-                    <div className="space-y-1 text-right">
-                        <p className="font-bold text-gray-600">তারিখ:</p>
-                        <p className="font-black text-xl text-black">{lastReceipt.date}</p>
-                    </div>
-                </div>
-
-                <div className="space-y-6">
-                    <div className="flex border-b border-gray-300 pb-2">
-                        <div className="w-1/3 font-bold text-gray-600 text-lg uppercase">সদস্যের নাম</div>
-                        <div className="w-2/3 font-black text-black text-2xl">{getMemberName(lastReceipt.memberId)}</div>
-                    </div>
-                    <div className="flex border-b border-gray-300 pb-2">
-                        <div className="w-1/3 font-bold text-gray-600 text-lg uppercase">বাড়ির নাম</div>
-                        <div className="w-2/3 font-bold text-black text-xl">{getMemberHouse(lastReceipt.memberId)}</div>
-                    </div>
-                    <div className="flex border-b border-gray-300 pb-2">
-                        <div className="w-1/3 font-bold text-gray-600 text-lg uppercase">চাঁদার মাস</div>
-                        <div className="w-2/3 font-bold text-black text-xl">{getBengaliMonthName(lastReceipt.month)}</div>
-                    </div>
-                    <div className="flex border-b border-gray-300 pb-2 items-center">
-                        <div className="w-1/3 font-bold text-gray-600 text-lg uppercase">টাকার পরিমাণ</div>
-                        <div className="w-2/3 font-black text-black text-4xl">৳{lastReceipt.amount.toLocaleString()}</div>
-                    </div>
-                </div>
-
-                <div className="mt-12 bg-gray-50 p-6 rounded-xl border border-gray-200 text-center relative italic text-gray-700 text-lg font-medium">
-                    <Quote size={24} className="absolute top-4 left-4 text-gray-300" />
-                    "{receiptQuote || "আপনার এই দান সদকায়ে জারিয়া হিসেবে কবুল হোক।"}"
-                </div>
-
-                <div className="flex justify-between items-end mt-24 px-12 break-inside-avoid">
-                    <div className="text-center">
-                        <div className="w-48 border-t-2 border-black mb-2"></div>
-                        <p className="font-bold text-gray-600">সদস্যের স্বাক্ষর</p>
-                    </div>
-                    <div className="text-center relative">
-                        <div className="signature-font text-3xl text-black absolute bottom-8 left-0 right-0 opacity-80 rotate-[-5deg]">
-                           {lastReceipt.receivedBy || 'Kawsar'}
-                        </div>
-                        <div className="w-48 border-t-2 border-black mb-2 relative z-10"></div>
-                        <p className="font-bold text-gray-600">আদায়কারীর স্বাক্ষর ({lastReceipt.receivedBy || 'কাউছার'})</p>
-                    </div>
-                </div>
-
-                <div className="absolute bottom-6 left-0 right-0 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
-                    সফটওয়্যার ও কারিগরি সহযোগিতায়: কালিপুর পাহারাদার ম্যানেজমেন্ট সিস্টেম
-                </div>
+      {/* --- PRINT ONLY VOUCHER --- */}
+      <div className="print-only">
+         <div className="border-[4px] border-black p-10 m-4 h-[120mm] rounded-[1rem] flex flex-col relative">
+            <div className="text-center border-b-2 border-black pb-6 mb-8">
+              <ShieldCheck size={64} className="mx-auto mb-2" />
+              <h1 className="text-3xl font-black uppercase">কালিপুর পাহারাদার কল্যাণ তহবিল</h1>
+              <p className="text-sm font-bold tracking-[0.3em] uppercase">{FIXED_ADDRESS}</p>
+              <div className="inline-block mt-4 px-6 py-1 border-2 border-black bg-gray-100 rounded-full font-black uppercase text-sm">টাকা জমার রশিদ</div>
             </div>
-        </div>
-      )}
+
+            <div className="flex justify-between mb-10 text-lg font-bold">
+               <span>রশিদ নং: {lastReceipt?.receiptNo}</span>
+               <span>তারিখ: {lastReceipt?.date}</span>
+            </div>
+
+            <div className="space-y-6 flex-1">
+               <div className="flex border-b border-black pb-2 items-end">
+                  <span className="w-40 font-bold uppercase text-gray-600">সদস্যের নাম:</span>
+                  <span className="flex-1 text-2xl font-black ml-4">{lastReceipt ? getMemberName(lastReceipt.memberId) : ''}</span>
+               </div>
+               <div className="flex border-b border-black pb-2 items-end">
+                  <span className="w-40 font-bold uppercase text-gray-600">বাড়ির নাম:</span>
+                  <span className="flex-1 text-xl font-bold ml-4">{lastReceipt ? getMemberHouse(lastReceipt.memberId) : ''}</span>
+               </div>
+               <div className="flex border-b border-black pb-2 items-end">
+                  <span className="w-40 font-bold uppercase text-gray-600">চাঁদার মাস:</span>
+                  <span className="flex-1 text-xl font-black ml-4">{lastReceipt ? getBengaliMonthName(lastReceipt.month) : ''}</span>
+               </div>
+               <div className="flex border-b-2 border-black py-4 items-center justify-between">
+                  <span className="text-xl font-black uppercase">জমার পরিমাণ:</span>
+                  <span className="text-4xl font-black">৳ {lastReceipt?.amount.toLocaleString()} /-</span>
+               </div>
+            </div>
+
+            <div className="mt-12 flex justify-between items-end px-10">
+               <div className="text-center">
+                  <div className="w-48 border-t-2 border-black mb-2"></div>
+                  <p className="font-bold text-sm uppercase">সদস্যের স্বাক্ষর</p>
+               </div>
+               <div className="text-center">
+                  <div className="signature-font text-3xl mb-1">{lastReceipt?.receivedBy}</div>
+                  <div className="w-48 border-t-2 border-black mb-2"></div>
+                  <p className="font-bold text-sm uppercase">আদায়কারী স্বাক্ষর</p>
+               </div>
+            </div>
+
+            <div className="absolute bottom-4 left-0 right-0 text-center text-[10px] font-bold text-gray-500 uppercase">
+              নিরাপদ কালিপুর গড়ার লক্ষে — কালিপুর পাহারাদার ম্যানেজমেন্ট সিস্টেম
+            </div>
+         </div>
+      </div>
     </div>
   );
 };

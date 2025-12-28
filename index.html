@@ -19,14 +19,14 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
 
-        /* --- ENHANCED GLOBAL PRINT STYLES --- */
+        /* --- ADVANCED GLOBAL PRINT ENGINE --- */
         @media print {
             @page { 
-                margin: 15mm 10mm; 
+                margin: 10mm; 
                 size: A4 portrait; 
             }
 
-            /* Global visibility control - Hides navigation and interactive elements */
+            /* Global UI Hiding */
             .no-print, 
             aside, 
             nav, 
@@ -37,14 +37,26 @@
             select, 
             .notifications-container,
             .modal-overlay,
-            [role="button"] { 
+            [role="button"],
+            .md\:hidden { 
                 display: none !important; 
             }
 
-            /* Reset the root and main containers for full width printing */
+            /* Force visibility of print-only content */
+            .print-only { 
+                display: block !important; 
+                visibility: visible !important;
+                width: 100% !important;
+                position: static !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                opacity: 1 !important;
+            }
+
+            /* Layout Reset for printing */
             html, body, #root {
-                background: white !important;
-                color: black !important;
+                background: #ffffff !important;
+                color: #000000 !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
@@ -56,84 +68,81 @@
                 padding: 0 !important;
                 margin: 0 !important;
                 display: block !important;
+                width: 100% !important;
                 overflow: visible !important;
-                width: 100% !important;
             }
 
-            /* Visibility of print-specific blocks */
-            .print-only { 
-                display: block !important; 
-                visibility: visible !important;
-                width: 100% !important;
-                position: relative !important;
-                margin: 0 auto !important;
-                padding: 10px !important;
-            }
-
-            /* Professional Table Formatting for Paper */
+            /* Professional Table Formatting for Print */
             table { 
                 width: 100% !important; 
                 border-collapse: collapse !important; 
                 margin-top: 15px !important;
-                margin-bottom: 25px !important;
-                page-break-inside: auto;
-                border: 1px solid #000 !important;
+                margin-bottom: 15px !important;
+                table-layout: auto !important;
+                border: 1.5pt solid #000000 !important;
             }
             
+            thead { 
+                display: table-header-group !important; /* Repeats headers on each page */
+            }
+
             th {
-                background-color: #f3f4f6 !important;
+                background-color: #f0f0f0 !important;
                 -webkit-print-color-adjust: exact;
-                color: #000 !important;
+                color: #000000 !important;
                 font-weight: 800 !important;
-                border: 1px solid #000 !important;
-                padding: 10px 8px !important;
-                text-transform: uppercase;
+                border: 0.75pt solid #000000 !important;
+                padding: 10pt 8pt !important;
                 font-size: 11pt !important;
+                text-align: center !important;
             }
 
             td { 
-                border: 1px solid #000 !important; 
-                padding: 8px 10px !important; 
-                text-align: left;
+                border: 0.75pt solid #000000 !important; 
+                padding: 8pt 8pt !important; 
                 font-size: 10pt !important;
-                color: #000 !important;
+                color: #000000 !important;
+                line-height: 1.4 !important;
             }
 
-            thead { display: table-header-group !important; }
-            tr { page-break-inside: avoid !important; }
-
-            /* Professional Typography */
-            h1, h2, h3, h4 { 
-                color: #000 !important; 
-                margin-top: 0 !important;
-                page-break-after: avoid !important;
-                font-weight: bold !important;
+            tr { 
+                page-break-inside: avoid !important; 
             }
 
-            /* Signature & Header Graphics */
+            /* Professional Print Typography */
+            h1, h2, h3, h4, h5 { 
+                color: #000000 !important; 
+                font-weight: 900 !important;
+                text-transform: uppercase;
+                margin-bottom: 4pt !important;
+            }
+
             .signature-font { 
                 font-family: 'Dancing Script', cursive !important;
                 font-size: 20pt !important;
-            }
-            
-            .break-inside-avoid {
-                page-break-inside: avoid !important;
+                color: #000000 !important;
+                line-height: 1 !important;
             }
 
-            /* Branding elements color fix */
-            .text-emerald-600, .text-rose-600, .text-blue-600, .text-amber-600 {
-                color: #000 !important;
-                font-weight: bold !important;
+            /* Background & Color Adjustments for Print */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .bg-emerald-50, .bg-gray-50, .bg-rose-50, .bg-blue-50 {
+                background-color: #f9f9f9 !important;
+                border: 0.5pt solid #ccc !important;
+            }
+            
+            /* Avoid page breaks in signatures */
+            .break-inside-avoid {
+                page-break-inside: avoid !important;
             }
         }
         
         .print-only { display: none; }
         .signature-font { font-family: 'Dancing Script', cursive; }
-
-        @media (max-width: 768px) {
-            .main-content { padding: 1rem !important; }
-            h1 { font-size: 1.5rem !important; }
-        }
 
         input, select, textarea, button, p, span, h1, h2, h3, h4, h5 {
             font-family: 'Hind Siliguri', sans-serif !important;

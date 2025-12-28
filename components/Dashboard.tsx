@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from 'react';
 import { Member, Subscription, Expense, ViewState } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-// Added CheckCircle2 to the imports from lucide-react to fix the reference error in the Monthly Stats section
 import { TrendingUp, TrendingDown, Users, CreditCard, PlusCircle, Wallet, History, FileText, Lock, Calendar, ShoppingBag, ArrowUpRight, ArrowDownRight, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 interface DashboardProps {
@@ -84,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ members, subscriptions, expenses,
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* Monthly Overview & Enhanced Quick Access Section */}
+      {/* Monthly Overview Section */}
       <section className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
           <div>
@@ -108,7 +107,6 @@ const Dashboard: React.FC<DashboardProps> = ({ members, subscriptions, expenses,
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-          {/* Income Card */}
           <div className="bg-gradient-to-br from-white to-emerald-50/30 rounded-3xl p-8 border border-emerald-100/50 shadow-sm relative overflow-hidden group">
              <div className="absolute right-0 top-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 group-hover:scale-125 transition-transform duration-700">
                <Wallet size={160} className="text-emerald-900" />
@@ -127,7 +125,6 @@ const Dashboard: React.FC<DashboardProps> = ({ members, subscriptions, expenses,
              </div>
           </div>
 
-          {/* Expense Card */}
           <div className="bg-gradient-to-br from-white to-rose-50/30 rounded-3xl p-8 border border-rose-100/50 shadow-sm relative overflow-hidden group">
              <div className="absolute right-0 top-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 group-hover:scale-125 transition-transform duration-700">
                <ShoppingBag size={160} className="text-rose-900" />
@@ -147,26 +144,8 @@ const Dashboard: React.FC<DashboardProps> = ({ members, subscriptions, expenses,
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-[2rem] p-6 flex flex-col sm:flex-row justify-between items-center mb-12 shadow-2xl shadow-slate-200">
-           <div className="flex items-center gap-4 mb-4 sm:mb-0">
-             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${monthlyStats.balance >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-               <CreditCard size={24} />
-             </div>
-             <div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">মাসের বর্তমান স্থিতি</p>
-               <h4 className="text-xl font-black text-white">৳ {monthlyStats.balance.toLocaleString()}</h4>
-             </div>
-           </div>
-           <div className="flex items-center gap-2 px-6 py-3 bg-white/5 rounded-xl border border-white/10">
-             <span className="text-xs font-bold text-slate-300">স্থিতি:</span>
-             <span className={`text-sm font-black ${monthlyStats.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-               {monthlyStats.balance >= 0 ? 'পজিটিভ' : 'নেগেটিভ'}
-             </span>
-           </div>
-        </div>
-
-        {/* Action Buttons Section */}
-        <div>
+        {/* Enhanced Quick Actions Grid */}
+        <div className="mt-12">
           <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
             দ্রুত নেভিগেশন <div className="h-px flex-1 bg-gray-100"></div>
           </h4>

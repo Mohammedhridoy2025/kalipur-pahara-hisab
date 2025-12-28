@@ -18,9 +18,10 @@ const FIXED_ADDRESS = "কালিপুর, হোমনা, কুমিল�
 const DEFAULT_PHOTO = "https://png.pngtree.com/png-vector/20231019/ourmid/pngtree-user-profile-avatar-png-image_10211467.png";
 const MIN_MONTH = "2024-01";
 
+// Added "বাংলাদেশ" at the beginning of the list
 const COUNTRY_OPTIONS = [
-  "সৌদি আরব", "সংযুক্ত আরব আমিরাত", "ওমান", "মালয়েশিয়া", "কাতার", "কুয়েত", "সিঙ্গাপুর",
-  "যুক্তরাজ্য (ব্রিটেন)", "イতালি", "পর্তুগাল", "গ্রিস", "ফ্রান্স", "স্পেন", "জার্মানি", "রোমানিয়া",
+  "বাংলাদেশ", "সৌদি আরব", "সংযুক্ত আরব আমিরাত", "ওমান", "মালয়েশিয়া", "কাতার", "কুয়েত", "সিঙ্গাপুর",
+  "যুক্তরাজ্য (ব্রিটেন)", "ইতালি", "পর্তুগাল", "গ্রিস", "ফ্রান্স", "স্পেন", "জার্মানি", "রোমানিয়া",
   "যুক্তরাষ্ট্র (আমেরিকা)", "কানাডা", "অস্ট্রেলিয়া", "দক্ষিণ কোরিয়া", "বাহরাইন", "জর্ডান", "মালদ্বীপ", "লেবানন", "ব্রুনাই", "জাপান", "দক্ষিণ আফ্রিকা"
 ];
 
@@ -211,7 +212,6 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-             {/* Month Picker for Status Check */}
              <div className="relative flex-1 md:flex-none">
                 <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600" />
                 <input 
@@ -223,7 +223,6 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
                 />
              </div>
 
-             {/* Payment Filter */}
              <div className="relative flex-1 md:flex-none">
                <Wallet size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600" />
                <select 
@@ -238,7 +237,6 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
              </div>
 
-             {/* Member Status Filter */}
              <div className="relative flex-1 md:flex-none">
                <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600" />
                <select 
@@ -288,12 +286,8 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
            const isPaid = isMemberPaidForMonth(member.id, selectedMonth);
            return (
              <div key={member.id} className="group relative bg-white rounded-[2rem] overflow-hidden border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
-                
-                {/* Header Banner - Taller height to prevent overlap */}
                 <div className="h-28 bg-emerald-600 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600"></div>
-                    
-                    {/* CENTERED Payment Badge - Positioned at the very top */}
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 w-full flex justify-center">
                         <div className={`
                           flex items-center gap-2 px-6 py-2 rounded-2xl text-[11px] font-black uppercase tracking-[0.1em] shadow-lg backdrop-blur-md border transition-all duration-300 group-hover:scale-105
@@ -305,8 +299,6 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
                            {isPaid ? 'পরিশোধিত' : 'বকেয়া'}
                         </div>
                     </div>
-
-                    {/* Top Actions */}
                     {isAdmin && (
                       <div className="absolute top-3 right-3 flex gap-2 z-30 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                          <button 
@@ -343,9 +335,17 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
 
                 <div className="p-6 pt-4 flex-1 flex flex-col">
                     <h3 className="text-xl font-black text-gray-800 leading-tight mb-1 line-clamp-1">{member.name}</h3>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-5">
-                         <Home size={12} className="text-emerald-500" /> 
-                         {member.houseName}
+                    
+                    {/* ENHANCED INFO SECTION: HOUSE AND COUNTRY */}
+                    <div className="flex flex-col gap-1.5 mb-5">
+                         <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                              <Home size={12} className="text-emerald-500" /> 
+                              {member.houseName}
+                         </div>
+                         <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 w-fit px-2 py-0.5 rounded-md border border-blue-100/50">
+                              <Globe size={11} className="animate-pulse" />
+                              {member.country}
+                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-6">
@@ -377,18 +377,41 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
              </div>
            )
          })}
-         
-         {sortedMembers.length === 0 && (
-            <div className="col-span-full py-20 text-center bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200">
-               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-gray-300">
-                 <HelpCircle size={32} />
-               </div>
-               <p className="text-gray-400 font-bold">এই ফিল্টার অনুযায়ী কোনো সদস্য পাওয়া যায়নি</p>
-            </div>
-         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Confirmation Modal for Edit */}
+      {isUpdateConfirmOpen && isAdmin && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[200] no-print animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] p-8 md:p-10 w-full max-sm shadow-2xl text-center animate-in zoom-in duration-300">
+             <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100">
+                <Edit2 size={40} />
+             </div>
+             <h3 className="text-2xl font-black text-gray-800 mb-2 tracking-tight">সংশোধন নিশ্চিত করুন</h3>
+             <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+               আপনি কি <span className="text-blue-600 font-black">"{editingMember?.name}"</span> এর সদস্য তথ্য আপডেট করতে নিশ্চিত?
+             </p>
+             <div className="flex flex-col gap-3">
+                <button 
+                  onClick={performSave} 
+                  disabled={isSaving}
+                  className="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                >
+                   {isSaving ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
+                   হ্যাঁ, আপডেট করুন
+                </button>
+                <button 
+                  onClick={() => setIsUpdateConfirmOpen(false)} 
+                  disabled={isSaving}
+                  className="w-full py-4 bg-gray-50 text-gray-500 rounded-xl font-black hover:bg-gray-100 transition-all"
+                >
+                   বাতিল
+                </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Member Edit Modal */}
       {isModalOpen && isAdmin && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[150] no-print">
            <div className="bg-white rounded-[2.5rem] p-8 md:p-10 w-full max-w-2xl shadow-2xl relative animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
@@ -452,55 +475,6 @@ const MemberManager: React.FC<MemberManagerProps> = ({ members, subscriptions, i
                   {isSaving ? 'সেভ হচ্ছে...' : (editingMember ? 'তথ্য সংশোধন করুন' : 'নিবন্ধন করুন')}
                 </button>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Update Confirmation Modal */}
-      {isUpdateConfirmOpen && isAdmin && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[200] no-print animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2.5rem] p-8 md:p-10 w-full max-w-sm shadow-2xl text-center animate-in zoom-in duration-300">
-             <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100">
-                <Edit2 size={40} />
-             </div>
-             <h3 className="text-2xl font-black text-gray-800 mb-2 tracking-tight">সংশোধন নিশ্চিত করুন</h3>
-             <p className="text-gray-500 font-medium mb-8 leading-relaxed">
-               আপনি কি <span className="text-blue-600 font-black">"{editingMember?.name}"</span> এর সদস্য তথ্য আপডেট করতে নিশ্চিত?
-             </p>
-             <div className="flex flex-col gap-3">
-                <button 
-                  onClick={performSave} 
-                  disabled={isSaving}
-                  className="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-                >
-                   {isSaving ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
-                   হ্যাঁ, আপডেট করুন
-                </button>
-                <button 
-                  onClick={() => setIsUpdateConfirmOpen(false)} 
-                  disabled={isSaving}
-                  className="w-full py-4 bg-gray-50 text-gray-500 rounded-xl font-black hover:bg-gray-100 transition-all"
-                >
-                   বাতিল
-                </button>
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {confirmDeleteId && isAdmin && (
-         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200] no-print">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative animate-in zoom-in duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mb-4"><Trash2 size={32} /></div>
-              <h3 className="text-xl font-black text-gray-800 mb-2">সদস্য মুছে ফেলবেন?</h3>
-              <p className="text-gray-500 text-sm mb-8 font-medium">রেকর্ডটি রিসাইকেল বিনে জমা হবে।</p>
-              <div className="flex gap-3 w-full">
-                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-xl font-black">বাতিল</button>
-                <button onClick={handleDelete} className="flex-1 py-4 bg-rose-600 text-white rounded-xl font-black">হ্যাঁ, মুছুন</button>
-              </div>
-            </div>
           </div>
         </div>
       )}

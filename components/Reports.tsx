@@ -38,7 +38,7 @@ const Reports: React.FC<ReportsProps> = ({ members, subscriptions, expenses }) =
       '05': 'মে', '06': 'জুন', '07': 'জুলাই', '08': 'আগস্ট',
       '09': 'সেপ্টেম্বর', '10': 'অক্টোবর', '11': 'নভেম্বর', '12': 'ডিসেম্বর'
     };
-    return `${months[month]} ${year}`;
+    return months[month] ? `${months[month]} ${year}` : monthStr;
   };
 
   const filteredSubs = useMemo(() => subscriptions.filter(s => s.memberId && s.month === selectedMonth), [subscriptions, selectedMonth]);
@@ -157,7 +157,7 @@ const Reports: React.FC<ReportsProps> = ({ members, subscriptions, expenses }) =
         </button>
       </div>
 
-      {/* Detailed View Table (Screen Only) */}
+      {/* Screen Only Table */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-gray-200 no-print overflow-hidden shadow-sm">
         <h4 className="text-lg font-black text-gray-800 flex items-center gap-3 mb-6">
           <ListChecks className="text-emerald-500" size={24} />
@@ -198,13 +198,12 @@ const Reports: React.FC<ReportsProps> = ({ members, subscriptions, expenses }) =
         </div>
       </div>
 
-      {/* --- PRINTABLE SECTION --- */}
-      <div className="print-only bg-white w-full">
-        {/* Print Branding Header */}
-        <div className="text-center border-b-2 border-black pb-6 mb-8">
+      {/* --- PRINTABLE ENGINE --- */}
+      <div className="print-only">
+        <div className="text-center border-b-4 border-black pb-6 mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <ShieldCheck size={48} className="text-black" />
-            <h1 className="text-4xl font-black text-black uppercase tracking-tighter">কালিপুর পাহারাদার কল্যাণ তহবিল</h1>
+            <h1 className="text-4xl font-black text-black tracking-tighter uppercase">কালিপুর পাহারাদার কল্যাণ তহবিল</h1>
           </div>
           <p className="text-lg font-bold text-black uppercase tracking-[0.2em]">{FIXED_ADDRESS}</p>
           <div className="inline-block mt-4 px-10 py-2 border-2 border-black bg-gray-50 rounded-full font-black text-xl">
@@ -214,35 +213,31 @@ const Reports: React.FC<ReportsProps> = ({ members, subscriptions, expenses }) =
               'মাসিক চাঁদা আদায় রিপোর্ট'}
           </div>
           <p className="text-lg font-bold text-black mt-4">মাস: {getBengaliMonthName(selectedMonth)}</p>
-          <p className="text-xs font-bold text-gray-600 mt-2">রিপোর্ট জেনারেট তারিখ: {new Date().toLocaleDateString('bn-BD')}</p>
         </div>
 
-        {/* Full Report Content */}
         {printMode === 'full' && (
           <div className="space-y-10">
-            {/* Summary Grid for Print */}
             <div className="grid grid-cols-3 gap-0 border-2 border-black">
               <div className="border-r-2 border-black p-4 text-center">
-                <p className="text-xs font-bold uppercase mb-1">মোট আদায়</p>
+                <p className="text-[10pt] font-bold uppercase mb-1">মোট আদায়</p>
                 <p className="text-2xl font-black">৳{monthTotalIn.toLocaleString()}</p>
               </div>
               <div className="border-r-2 border-black p-4 text-center">
-                <p className="text-xs font-bold uppercase mb-1">মোট ব্যয়</p>
+                <p className="text-[10pt] font-bold uppercase mb-1">মোট ব্যয়</p>
                 <p className="text-2xl font-black">৳{monthTotalOut.toLocaleString()}</p>
               </div>
-              <div className="p-4 text-center bg-gray-50">
-                <p className="text-xs font-bold uppercase mb-1">অবশিষ্ট ব্যালেন্স</p>
+              <div className="p-4 text-center">
+                <p className="text-[10pt] font-bold uppercase mb-1">অবশিষ্ট ব্যালেন্স</p>
                 <p className="text-2xl font-black">৳{monthBalance.toLocaleString()}</p>
               </div>
             </div>
 
-            {/* Income Table */}
             <section>
               <h3 className="text-xl font-black text-black mb-4 border-b-2 border-black pb-2 uppercase tracking-widest">১. আদায় তালিকা (চাঁদা)</h3>
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th className="w-16 text-center">নং</th>
+                  <tr>
+                    <th className="w-16">নং</th>
                     <th>সদস্যের নাম</th>
                     <th>বাড়ির নাম</th>
                     <th className="text-right">পরিমাণ</th>
@@ -257,18 +252,20 @@ const Reports: React.FC<ReportsProps> = ({ members, subscriptions, expenses }) =
                       <td className="text-right font-black">৳{sub.amount.toLocaleString()}</td>
                     </tr>
                   ))}
-                  {filteredSubs.length === 0 && <tr><td colSpan={4} className="text-center italic py-4">কোনো ডাটা নেই</td></tr>}
+                  <tr className="bg-gray-50 font-black">
+                    <td colSpan={3} className="text-right p-4">মোট আদায়:</td>
+                    <td className="text-right p-4">৳{monthTotalIn.toLocaleString()}</td>
+                  </tr>
                 </tbody>
               </table>
             </section>
 
-            {/* Expense Table */}
             <section>
               <h3 className="text-xl font-black text-black mb-4 border-b-2 border-black pb-2 uppercase tracking-widest">২. ব্যয়ের তালিকা (বাজার ও অন্যান্য)</h3>
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th className="w-16 text-center">নং</th>
+                  <tr>
+                    <th className="w-16">নং</th>
                     <th>বিবরণ</th>
                     <th>তারিখ</th>
                     <th className="text-right">পরিমাণ</th>
@@ -280,87 +277,71 @@ const Reports: React.FC<ReportsProps> = ({ members, subscriptions, expenses }) =
                       <td className="text-center font-bold">{idx + 1}</td>
                       <td>
                         <span className="font-black block">{exp.description}</span>
-                        <span className="text-[10px] block opacity-70">{exp.items.map(i => i.name).join(', ')}</span>
+                        <span className="text-[9pt] block opacity-70 italic">{exp.items.map(i => i.name).join(', ')}</span>
                       </td>
                       <td>{exp.date}</td>
                       <td className="text-right font-black">৳{exp.amount.toLocaleString()}</td>
                     </tr>
                   ))}
-                  {filteredExps.length === 0 && <tr><td colSpan={4} className="text-center italic py-4">কোনো ডাটা নেই</td></tr>}
+                  <tr className="bg-gray-50 font-black">
+                    <td colSpan={3} className="text-right p-4">মোট ব্যয়:</td>
+                    <td className="text-right p-4">৳{monthTotalOut.toLocaleString()}</td>
+                  </tr>
                 </tbody>
               </table>
             </section>
           </div>
         )}
 
-        {/* Member List Print */}
-        {printMode === 'members' && (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="text-center w-12">নং</th>
-                <th>নাম ও অবস্থান</th>
-                <th>বাড়ির নাম</th>
-                <th className="text-right">মোট অবদান</th>
-              </tr>
-            </thead>
-            <tbody>
-              {memberSummary.map((mem, idx) => (
-                <tr key={mem.id}>
-                  <td className="text-center font-bold">{idx + 1}</td>
-                  <td>
-                    <div className="font-black">{mem.name}</div>
-                    <div className="text-[10px] uppercase font-bold text-gray-500">{mem.country}</div>
-                  </td>
-                  <td>{mem.houseName}</td>
-                  <td className="text-right font-black">৳{mem.totalContribution.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {/* Other Modes (Simple Tables) */}
-        {(printMode === 'collections' || printMode === 'expenses') && (
+        {(printMode === 'collections' || printMode === 'expenses' || printMode === 'members') && (
            <table className="w-full">
              <thead>
-               <tr className="bg-gray-100">
+               <tr>
                  <th className="text-center w-12">নং</th>
-                 <th>{printMode === 'collections' ? 'সদস্যের নাম' : 'বিবরণ'}</th>
-                 <th className="text-right">পরিমাণ</th>
+                 <th>{printMode === 'members' ? 'সদস্যের নাম ও বাড়ি' : (printMode === 'collections' ? 'সদস্যের নাম' : 'বিবরণ')}</th>
+                 {printMode === 'members' && <th>অবস্থান</th>}
+                 <th className="text-right">{printMode === 'members' ? 'মোট দান' : 'পরিমাণ'}</th>
                </tr>
              </thead>
              <tbody>
-               {(printMode === 'collections' ? filteredSubs : filteredExps).map((item: any, idx) => (
+               {(printMode === 'members' ? memberSummary : (printMode === 'collections' ? filteredSubs : filteredExps)).map((item: any, idx) => (
                  <tr key={item.id}>
                    <td className="text-center font-bold">{idx + 1}</td>
-                   <td className="font-black">{printMode === 'collections' ? getMemberName(item.memberId) : item.description}</td>
-                   <td className="text-right font-black">৳{item.amount.toLocaleString()}</td>
+                   <td>
+                      <div className="font-black">
+                        {printMode === 'members' ? item.name : (printMode === 'collections' ? getMemberName(item.memberId) : item.description)}
+                      </div>
+                      {printMode === 'members' && <div className="text-[9pt] font-bold text-gray-500 italic">{item.houseName}</div>}
+                   </td>
+                   {printMode === 'members' && <td>{item.country}</td>}
+                   <td className="text-right font-black">
+                     ৳{(printMode === 'members' ? item.totalContribution : item.amount).toLocaleString()}
+                   </td>
                  </tr>
                ))}
-               <tr className="bg-gray-50 font-black">
-                  <td colSpan={2} className="text-right">সর্বমোট:</td>
-                  <td className="text-right">৳{(printMode === 'collections' ? monthTotalIn : monthTotalOut).toLocaleString()}</td>
+               <tr className="bg-gray-100 font-black">
+                  <td colSpan={printMode === 'members' ? 3 : 2} className="text-right p-4 uppercase">সর্বমোট:</td>
+                  <td className="text-right p-4">
+                    ৳{(printMode === 'members' ? memberSummary.reduce((s,m) => s+m.totalContribution, 0) : (printMode === 'collections' ? monthTotalIn : monthTotalOut)).toLocaleString()}
+                  </td>
                </tr>
              </tbody>
            </table>
         )}
 
-        {/* Print Signature Footer */}
-        <div className="mt-24 flex justify-between px-12 break-inside-avoid">
+        <div className="mt-32 flex justify-between px-16 break-inside-avoid">
           <div className="text-center">
             <div className="w-48 border-t-2 border-black mb-2"></div>
-            <p className="text-sm font-black text-black uppercase">কোষাধ্যক্ষ</p>
+            <p className="text-sm font-black text-black uppercase tracking-widest">কোষাধ্যক্ষ</p>
           </div>
           <div className="text-center">
             <div className="w-48 border-t-2 border-black mb-2"></div>
-            <p className="text-sm font-black text-black uppercase">সভাপতি / সেক্রেটারি</p>
+            <p className="text-sm font-black text-black uppercase tracking-widest">সভাপতি / সেক্রেটারি</p>
           </div>
         </div>
 
-        {/* System Footer */}
-        <div className="fixed bottom-6 left-0 right-0 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest border-t border-gray-100 pt-4">
-          রিপোর্ট জেনারেটেড বাই: কালিপুর পাহারাদার ম্যানেজমেন্ট সিস্টেম
+        <div className="fixed bottom-6 left-0 right-0 text-center text-[9px] font-bold text-gray-500 uppercase tracking-[0.3em] border-t border-gray-100 pt-4">
+          রিপোর্ট জেনারেটেড বাই: কালিপুর পাহারাদার ম্যানেজমেন্ট সিস্টেম — তারিখ: {new Date().toLocaleDateString('bn-BD')}
         </div>
       </div>
     </div>
