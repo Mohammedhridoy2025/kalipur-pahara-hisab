@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -18,55 +19,114 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
 
-        /* --- GLOBAL PRINT STYLES --- */
+        /* --- ENHANCED GLOBAL PRINT STYLES --- */
         @media print {
             @page { 
-                margin: 10mm; 
-                size: auto; 
+                margin: 15mm 10mm; 
+                size: A4 portrait; 
             }
 
-            /* HIDE Everything normally visible on screen */
-            .no-print, aside, nav, header, .fixed, button { 
+            /* Global visibility control - Hides navigation and interactive elements */
+            .no-print, 
+            aside, 
+            nav, 
+            header, 
+            .fixed, 
+            button, 
+            input, 
+            select, 
+            .notifications-container,
+            .modal-overlay,
+            [role="button"] { 
                 display: none !important; 
             }
 
-            /* RESET Layout Containers: This is crucial for React/Tailwind Apps */
-            html, body, #root, .flex, .flex-col, .h-screen, .min-h-screen, main, .overflow-y-auto { 
-                display: block !important;
-                position: relative !important;
-                width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
-                overflow: visible !important;
+            /* Reset the root and main containers for full width printing */
+            html, body, #root {
+                background: white !important;
+                color: black !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                background-color: white !important;
-                color: black !important;
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
             }
 
-            /* SHOW Print Content */
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            /* Visibility of print-specific blocks */
             .print-only { 
                 display: block !important; 
                 visibility: visible !important;
+                width: 100% !important;
+                position: relative !important;
+                margin: 0 auto !important;
+                padding: 10px !important;
+            }
+
+            /* Professional Table Formatting for Paper */
+            table { 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                margin-top: 15px !important;
+                margin-bottom: 25px !important;
+                page-break-inside: auto;
+                border: 1px solid #000 !important;
             }
             
-            /* Table Handling for Multi-page */
-            table { page-break-inside: auto; width: 100% !important; border-collapse: collapse !important; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-            thead { display: table-header-group; }
-            tfoot { display: table-footer-group; }
-            
-            /* Ensure borders are crisp and visible */
-            *, *::before, *::after { 
-                border-color: #000 !important; 
-                box-shadow: none !important;
+            th {
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact;
+                color: #000 !important;
+                font-weight: 800 !important;
+                border: 1px solid #000 !important;
+                padding: 10px 8px !important;
+                text-transform: uppercase;
+                font-size: 11pt !important;
+            }
+
+            td { 
+                border: 1px solid #000 !important; 
+                padding: 8px 10px !important; 
+                text-align: left;
+                font-size: 10pt !important;
+                color: #000 !important;
+            }
+
+            thead { display: table-header-group !important; }
+            tr { page-break-inside: avoid !important; }
+
+            /* Professional Typography */
+            h1, h2, h3, h4 { 
+                color: #000 !important; 
+                margin-top: 0 !important;
+                page-break-after: avoid !important;
+                font-weight: bold !important;
+            }
+
+            /* Signature & Header Graphics */
+            .signature-font { 
+                font-family: 'Dancing Script', cursive !important;
+                font-size: 20pt !important;
             }
             
-            /* Hide scrollbars in print */
-            ::-webkit-scrollbar { display: none; }
+            .break-inside-avoid {
+                page-break-inside: avoid !important;
+            }
+
+            /* Branding elements color fix */
+            .text-emerald-600, .text-rose-600, .text-blue-600, .text-amber-600 {
+                color: #000 !important;
+                font-weight: bold !important;
+            }
         }
         
-        /* Helper class for screen view */
         .print-only { display: none; }
         .signature-font { font-family: 'Dancing Script', cursive; }
 
@@ -77,12 +137,6 @@
 
         input, select, textarea, button, p, span, h1, h2, h3, h4, h5 {
             font-family: 'Hind Siliguri', sans-serif !important;
-        }
-        
-        .slogan-fix {
-            white-space: nowrap;
-            overflow: visible;
-            display: inline-block;
         }
     </style>
 <script type="importmap">

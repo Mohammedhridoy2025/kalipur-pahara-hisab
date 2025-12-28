@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewState, Member, Subscription, Expense, TrashRecord, AppNotification } from './types';
 import Sidebar from './components/Sidebar';
@@ -5,13 +6,13 @@ import Dashboard from './components/Dashboard';
 import MemberManager from './components/MemberManager';
 import CollectionManager from './components/CollectionManager';
 import ExpenseManager from './components/ExpenseManager';
+import DefaulterManager from './components/DefaulterManager';
 import Reports from './components/Reports';
 import TrashBin from './components/TrashBin';
 import { Menu, X, Cloud, RefreshCw, Lock, Unlock, LogIn, LogOut, XCircle, User, Bell, CheckCircle2, AlertTriangle, Info, Loader2, ShieldCheck } from 'lucide-react';
 import { membersCol, subscriptionsCol, expensesCol, trashCol, auth } from './services/firebase';
 
 const App: React.FC = () => {
-  // Restore active view from local storage if available
   const [activeView, setActiveView] = useState<ViewState>(() => {
     return (localStorage.getItem('appActiveView') as ViewState) || 'dashboard';
   });
@@ -24,39 +25,25 @@ const App: React.FC = () => {
   const [preSelectedMemberId, setPreSelectedMemberId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(true);
-  
-  // Auth Loading State - prevents "flash" of non-admin content
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-
-  // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-
-  // Auth States
   const [isAdmin, setIsAdmin] = useState(false);
-  
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-
-  // Auto Logout Timer Ref
   const logoutTimerRef = useRef<any>(null);
 
-  // Helper to change view and persist to local storage
   const handleViewChange = (view: ViewState) => {
     setActiveView(view);
     localStorage.setItem('appActiveView', view);
     setIsMobileMenuOpen(false);
   };
 
-  // Notification Helper
   const addNotification = (type: AppNotification['type'], title: string, message: string) => {
     const id = Date.now().toString();
     const newNotification: AppNotification = { id, type, title, message };
-    
     setNotifications(prev => [newNotification, ...prev]);
-
-    // Auto remove after 5 seconds
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 5000);
@@ -66,61 +53,46 @@ const App: React.FC = () => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  // Monitor Auth State
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setIsAdmin(!!user);
-      setIsAuthChecking(false); // Auth check completed
+      setIsAuthChecking(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Auto Logout on Inactivity (15 Minutes)
   useEffect(() => {
     if (!isAdmin) return;
-
-    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
-
+    // Increased to 24 hours as requested to avoid frequent logout
+    const INACTIVITY_LIMIT = 24 * 60 * 60 * 1000; 
+    
     const performAutoLogout = async () => {
       try {
         await auth.signOut();
         handleViewChange('dashboard');
-        alert("দীর্ঘক্ষণ নিষ্ক্রিয় থাকার কারণে নিরাপত্তার স্বার্থে আপনাকে লগআউট করা হয়েছে।");
+        addNotification('warning', 'নিরাপত্তা সতর্কতা', 'দীর্ঘক্ষণ ব্যবহারের পর আপনার সেশন শেষ হয়েছে।');
       } catch (error) {
         console.error("Auto logout error", error);
       }
     };
-
+    
     const resetTimer = () => {
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
       logoutTimerRef.current = setTimeout(performAutoLogout, INACTIVITY_LIMIT);
     };
-
-    // Events to track activity
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     
-    // Set initial timer
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     resetTimer();
-
-    // Add event listeners
-    activityEvents.forEach(event => {
-      document.addEventListener(event, resetTimer);
-    });
-
-    // Cleanup
+    activityEvents.forEach(event => document.addEventListener(event, resetTimer));
+    
     return () => {
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-      activityEvents.forEach(event => {
-        document.removeEventListener(event, resetTimer);
-      });
+      activityEvents.forEach(event => document.removeEventListener(event, resetTimer));
     };
   }, [isAdmin]);
 
-  // Real-time synchronization with Firebase Firestore
   useEffect(() => {
     setIsSyncing(true);
-    
-    // Listen for Members
     const unsubMembers = membersCol.onSnapshot((snapshot) => {
       const membersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Member));
       setMembers(membersList);
@@ -129,31 +101,24 @@ const App: React.FC = () => {
       console.error("Firebase Sync Error (Members):", error);
       setIsSyncing(false);
     });
-
-    // Listen for Subscriptions
     const unsubSubs = subscriptionsCol.onSnapshot((snapshot) => {
       const subsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subscription));
       setSubscriptions(subsList.sort((a, b) => b.date.localeCompare(a.date)));
     }, (error) => {
       console.error("Firebase Sync Error (Subscriptions):", error);
     });
-
-    // Listen for Expenses
     const unsubExpenses = expensesCol.onSnapshot((snapshot) => {
       const expList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense));
       setExpenses(expList.sort((a, b) => b.date.localeCompare(a.date)));
     }, (error) => {
       console.error("Firebase Sync Error (Expenses):", error);
     });
-
-    // Listen for Trash
     const unsubTrash = trashCol.onSnapshot((snapshot) => {
       const trashList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TrashRecord));
       setTrashRecords(trashList.sort((a, b) => b.deletedAt.localeCompare(a.deletedAt)));
     }, (error) => {
       console.error("Firebase Sync Error (Trash):", error);
     });
-
     return () => {
       unsubMembers();
       unsubSubs();
@@ -179,43 +144,25 @@ const App: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-
     const cleanUsername = loginUsername.trim().toLowerCase();
     const cleanPassword = loginPassword.trim();
-    
     const email = cleanUsername === 'admin' ? 'admin@kalipur.com' : cleanUsername;
-
     try {
       await auth.signInWithEmailAndPassword(email, cleanPassword);
-      // Success is handled by the onAuthStateChanged listener
       setIsLoginModalOpen(false);
       setLoginUsername('');
       setLoginPassword('');
       addNotification('success', 'লগইন সফল', 'অ্যাডমিন প্যানেলে স্বাগতম');
     } catch (error: any) {
-      console.error("Login failed:", error.code);
-      
-      // Auto-create default admin if not found (legacy support transition)
       if (cleanUsername === 'admin' && error.code === 'auth/user-not-found') {
         try {
           await auth.createUserWithEmailAndPassword(email, cleanPassword);
           setIsLoginModalOpen(false);
-          setLoginUsername('');
-          setLoginPassword('');
-          addNotification('success', 'অ্যাডমিন তৈরি হয়েছে', 'ডিফল্ট অ্যাডমিন একাউন্ট তৈরি এবং লগইন সফল হয়েছে');
+          addNotification('success', 'অ্যাডমিন তৈরি হয়েছে', 'লগইন সফল');
           return;
-        } catch (createErr: any) {
-          console.error("Failed to create admin:", createErr);
-        }
+        } catch (createErr) {}
       }
-
-      if (error.code === 'auth/configuration-not-found') {
-         setLoginError('অথেন্টিকেশন সিস্টেম কনফিগার করা নেই। অনুগ্রহ করে অ্যাডমিন ক্রেডেনশিয়াল ব্যবহার করুন।');
-      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-         setLoginError('ভুল ইউজারনেম বা পাসওয়ার্ড! আবার চেষ্টা করুন।');
-      } else {
-         setLoginError('লগইন সমস্যা। অনুগ্রহ করে আবার চেষ্টা করুন।');
-      }
+      setLoginError('ভুল ইউজারনেম বা পাসওয়ার্ড!');
     }
   };
 
@@ -234,40 +181,13 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard members={members} subscriptions={subscriptions} expenses={expenses} onAction={handleQuickAction} isAdmin={isAdmin} />;
       case 'members':
-        return (
-          <MemberManager 
-            members={members} 
-            subscriptions={subscriptions}
-            setMembers={() => {}} 
-            initialOpen={initialAction === 'add-member'}
-            onCloseModal={() => setInitialAction(null)}
-            onAddSubscription={handleQuickSubscription}
-            isAdmin={isAdmin}
-          />
-        );
+        return <MemberManager members={members} subscriptions={subscriptions} setMembers={() => {}} initialOpen={initialAction === 'add-member'} onCloseModal={() => setInitialAction(null)} onAddSubscription={handleQuickSubscription} isAdmin={isAdmin} />;
       case 'collections':
-        return (
-          <CollectionManager 
-            members={members} 
-            subscriptions={subscriptions} 
-            setSubscriptions={() => {}} 
-            initialMemberId={preSelectedMemberId || undefined}
-            onClearPreSelection={() => setPreSelectedMemberId(null)}
-            isAdmin={isAdmin}
-            addNotification={addNotification}
-          />
-        );
+        return <CollectionManager members={members} subscriptions={subscriptions} setSubscriptions={() => {}} initialMemberId={preSelectedMemberId || undefined} onClearPreSelection={() => setPreSelectedMemberId(null)} isAdmin={isAdmin} addNotification={addNotification} />;
+      case 'defaulters':
+        return <DefaulterManager members={members} subscriptions={subscriptions} onAddSubscription={handleQuickSubscription} />;
       case 'expenses':
-        return (
-          <ExpenseManager 
-            expenses={expenses} 
-            setExpenses={() => {}} 
-            initialOpen={initialAction === 'add-expense'}
-            onCloseModal={() => setInitialAction(null)}
-            isAdmin={isAdmin}
-            addNotification={addNotification}
-          />
-        );
+        return <ExpenseManager expenses={expenses} setExpenses={() => {}} initialOpen={initialAction === 'add-expense'} onCloseModal={() => setInitialAction(null)} isAdmin={isAdmin} addNotification={addNotification} />;
       case 'reports':
         return <Reports members={members} subscriptions={subscriptions} expenses={expenses} />;
       case 'trash':
@@ -277,9 +197,6 @@ const App: React.FC = () => {
     }
   };
 
-  // ----------------------------------------------------------
-  // RENDER LOADING SCREEN IF AUTH IS CHECKING
-  // ----------------------------------------------------------
   if (isAuthChecking) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
@@ -297,18 +214,9 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row">
-      {/* Toast Notification Container */}
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
         {notifications.map((note) => (
-          <div 
-            key={note.id} 
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-2xl border-l-4 w-80 animate-in slide-in-from-right-10 duration-300 backdrop-blur-md ${
-              note.type === 'success' ? 'bg-white/95 border-emerald-500 text-emerald-900' :
-              note.type === 'alert' ? 'bg-rose-50 border-rose-600 text-rose-900' :
-              note.type === 'warning' ? 'bg-amber-50 border-amber-500 text-amber-900' :
-              'bg-white/95 border-blue-500 text-blue-900'
-            }`}
-          >
+          <div key={note.id} className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-2xl border-l-4 w-80 animate-in slide-in-from-right-10 duration-300 backdrop-blur-md ${note.type === 'success' ? 'bg-white/95 border-emerald-500 text-emerald-900' : note.type === 'alert' ? 'bg-rose-50 border-rose-600 text-rose-900' : note.type === 'warning' ? 'bg-amber-50 border-amber-500 text-amber-900' : 'bg-white/95 border-blue-500 text-blue-900'}`}>
              <div className="mt-0.5">
                {note.type === 'success' && <CheckCircle2 size={18} className="text-emerald-600" />}
                {note.type === 'alert' && <AlertTriangle size={18} className="text-rose-600" />}
@@ -319,48 +227,30 @@ const App: React.FC = () => {
                <h4 className="font-black text-sm">{note.title}</h4>
                <p className="text-xs font-medium opacity-90 mt-0.5 leading-relaxed">{note.message}</p>
              </div>
-             <button onClick={() => removeNotification(note.id)} className="opacity-50 hover:opacity-100">
-               <X size={16} />
-             </button>
+             <button onClick={() => removeNotification(note.id)} className="opacity-50 hover:opacity-100"><X size={16} /></button>
           </div>
         ))}
       </div>
 
-      {/* Sync Status Badge */}
       {isSyncing && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold animate-pulse no-print">
           <RefreshCw size={16} className="animate-spin" />
-          <Cloud size={18} /> 
-          <span>ডাটা সিনক্রোনাইজ হচ্ছে...</span>
+          <Cloud size={18} /> <span>ডাটা সিনক্রোনাইজ হচ্ছে...</span>
         </div>
       )}
 
-      {/* Mobile Menu Toggle */}
       <div className="md:hidden bg-white p-4 flex justify-between items-center border-b border-gray-100 no-print">
         <div className="font-bold text-emerald-700 flex items-center gap-2">
            <span className="text-2xl">🛡️</span> কালিপুর
         </div>
         <div className="flex gap-2">
-           {!isAdmin && (
-             <button onClick={() => setIsLoginModalOpen(true)} className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-               <LogIn size={20} />
-             </button>
-           )}
-           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-emerald-600">
-             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-           </button>
+           {!isAdmin && <button onClick={() => setIsLoginModalOpen(true)} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><LogIn size={20} /></button>}
+           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-emerald-600">{isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}</button>
         </div>
       </div>
 
       <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block no-print`}>
-         <Sidebar 
-            activeView={activeView} 
-            setActiveView={handleViewChange} 
-            balance={balance} 
-            isAdmin={isAdmin}
-            onLogin={() => setIsLoginModalOpen(true)}
-            onLogout={handleLogout}
-         />
+         <Sidebar activeView={activeView} setActiveView={handleViewChange} balance={balance} isAdmin={isAdmin} onLogin={() => setIsLoginModalOpen(true)} onLogout={handleLogout} />
       </div>
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
@@ -369,70 +259,30 @@ const App: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-black text-emerald-800 tracking-tight">কালিপুর পাহারাদার ম্যানেজমেন্ট</h1>
             <p className="text-sm md:text-base text-gray-500 font-medium">আর্থিক সহযোগিতায় কালিপুর গ্রামের প্রবাসীগন</p>
           </div>
-          
           <div className={`flex items-center gap-3 p-3 md:p-4 rounded-2xl shadow-sm border self-start md:self-center cursor-pointer transition-all ${isAdmin ? 'bg-rose-50 border-rose-100' : 'bg-white border-emerald-50'}`} onClick={() => !isAdmin ? setIsLoginModalOpen(true) : handleLogout()}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${isAdmin ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-500'}`}>
-              {isAdmin ? <Unlock size={20} /> : <Lock size={20} />}
-            </div>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${isAdmin ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-500'}`}>{isAdmin ? <Unlock size={20} /> : <Lock size={20} />}</div>
             <div>
-              <p className={`text-xs md:text-sm font-black uppercase tracking-wider ${isAdmin ? 'text-rose-700' : 'text-gray-700'}`}>
-                {isAdmin ? 'অ্যাডমিন মোড চালু' : 'ভিউ অনলি মোড'}
-              </p>
-              <p className="text-[10px] md:text-xs text-gray-400 font-bold">
-                {isAdmin ? 'লগআউট করতে ক্লিক করুন' : 'লগইন করতে ক্লিক করুন'}
-              </p>
+              <p className={`text-xs md:text-sm font-black uppercase tracking-wider ${isAdmin ? 'text-rose-700' : 'text-gray-700'}`}>{isAdmin ? 'অ্যাডমিন মোড চালু' : 'ভিউ অনলি মোড'}</p>
+              <p className="text-[10px] md:text-xs text-gray-400 font-bold">{isAdmin ? 'লগআউট করতে ক্লিক করুন' : 'লগইন করতে ক্লিক করুন'}</p>
             </div>
           </div>
         </header>
         {renderView()}
       </main>
 
-      {/* Login Modal */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200] animate-in fade-in zoom-in duration-200">
           <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative">
-            <button onClick={() => setIsLoginModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <XCircle size={24} />
-            </button>
-            
+            <button onClick={() => setIsLoginModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><XCircle size={24} /></button>
             <div className="flex flex-col items-center mb-6">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3">
-                <Lock size={32} />
-              </div>
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3"><Lock size={32} /></div>
               <h3 className="text-xl font-black text-gray-800">অ্যাডমিন লগইন</h3>
-              <p className="text-sm text-gray-500 font-bold">তথ্য পরিবর্তন করার জন্য লগইন করুন</p>
             </div>
-
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-3">
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input 
-                    type="text" 
-                    placeholder="ইউজারনেম" 
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl font-bold text-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-                
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input 
-                    type="password" 
-                    placeholder="পাসওয়ার্ড" 
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl font-bold text-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                  />
-                </div>
-                
-                {loginError && <p className="text-rose-500 text-xs font-bold text-center mt-2 bg-rose-50 p-2 rounded-lg border border-rose-100 flex items-center justify-center gap-1"><XCircle size={12}/> {loginError}</p>}
-              </div>
-              <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 mt-2">
-                <LogIn size={20} /> লগইন করুন
-              </button>
+              <input type="text" placeholder="ইউজারনেম" className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} />
+              <input type="password" placeholder="পাসওয়ার্ড" className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+              {loginError && <p className="text-rose-500 text-xs font-bold text-center mt-2">{loginError}</p>}
+              <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg hover:bg-blue-700 transition-all">লগইন করুন</button>
             </form>
           </div>
         </div>

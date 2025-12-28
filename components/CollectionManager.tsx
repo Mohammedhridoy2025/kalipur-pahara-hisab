@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Member, Subscription, AppNotification } from '../types';
-import { Printer, Banknote, Edit2, Trash2, Search, ChevronDown, ChevronUp, Loader2, Calendar, User, CircleDollarSign, CheckCircle2, ShieldCheck, Quote, Home, MapPin, UserCheck, XCircle, Download, AlertTriangle, AlertOctagon, Lock } from 'lucide-react';
+import { Printer, Banknote, Edit2, Trash2, Search, ChevronDown, ChevronUp, Loader2, Calendar, User, CircleDollarSign, CheckCircle2, ShieldCheck, Quote, Home, MapPin, UserCheck, XCircle, Download, AlertTriangle, AlertOctagon, Lock, Send, RotateCcw } from 'lucide-react';
 import { getMotivationalQuote } from '../services/geminiService';
 import { db, trashCol } from '../services/firebase';
 import html2canvas from 'html2canvas';
@@ -328,7 +329,6 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              {/* Form inputs retained as is */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-600 uppercase tracking-widest px-2">
                   <Calendar size={14} className={editingId ? 'text-blue-500' : 'text-emerald-500'} /> চাঁদার মাস
@@ -438,27 +438,32 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
                 </div>
               </div>
 
-              <div className="md:col-span-2 flex flex-col md:flex-row gap-4 pt-4">
+              {/* ENHANCED BUTTON GROUP */}
+              <div className="md:col-span-2 flex flex-col md:flex-row gap-5 pt-6">
                 <button 
                   type="submit" 
                   disabled={!selectedMember || amount <= 0 || isDuplicateSelection} 
                   className={`
-                    flex-1 py-5 rounded-[1.5rem] font-black text-xl transition-all duration-200
-                    flex items-center justify-center gap-3 shadow-xl relative overflow-hidden group
+                    relative flex-1 py-5 rounded-[2rem] font-black text-xl transition-all duration-300
+                    flex items-center justify-center gap-3 group overflow-hidden active:scale-[0.97]
                     disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:transform-none disabled:border-none
                     ${editingId 
-                      ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 border-b-[6px] border-blue-900 active:border-b-0 active:translate-y-1' 
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl shadow-blue-200 hover:shadow-2xl hover:shadow-blue-300 border-b-[6px] border-blue-900 active:border-b-0' 
                       : (isDuplicateSelection 
-                          ? 'bg-rose-100 text-rose-400 border-none cursor-not-allowed' 
-                          : 'bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-1 border-b-[6px] border-emerald-900 active:border-b-0 active:translate-y-1')
+                          ? 'bg-rose-100 text-rose-400 cursor-not-allowed border-none shadow-none' 
+                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-200 hover:shadow-2xl hover:shadow-emerald-300 border-b-[6px] border-emerald-900 active:border-b-0')
                     }
                   `}
                 >
-                  <div className={`absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-[1.5rem] ${isDuplicateSelection ? 'hidden' : ''}`}></div>
-                  <span className="relative flex items-center gap-3 drop-shadow-md">
+                  {/* Subtle Shine Effect */}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  
+                  <span className="relative flex items-center gap-3 drop-shadow-lg transition-transform group-hover:scale-105">
                     {isDuplicateSelection 
-                      ? <><AlertOctagon size={26} strokeWidth={3} /> এন্ট্রি সম্ভব নয় (পেইড)</> 
-                      : (editingId ? <><CheckCircle2 size={26} strokeWidth={3} /> তথ্য আপডেট করুন</> : <><CheckCircle2 size={26} strokeWidth={3} /> জমা নিশ্চিত করুন</>)
+                      ? <><AlertOctagon size={28} /> এন্ট্রি সম্ভব নয়</> 
+                      : (editingId 
+                          ? <><CheckCircle2 size={28} className="group-hover:rotate-12 transition-transform" /> তথ্য আপডেট করুন</> 
+                          : <><Send size={28} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> জমা নিশ্চিত করুন</>)
                     }
                   </span>
                 </button>
@@ -467,9 +472,10 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
                   <button 
                     type="button" 
                     onClick={handleCancelEdit} 
-                    className="flex-1 py-6 bg-gray-100 text-gray-600 rounded-[1.5rem] font-black text-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
+                    className="relative flex-1 py-5 bg-white border-2 border-gray-200 text-gray-500 rounded-[2rem] font-black text-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.97] shadow-sm hover:shadow-md"
                   >
-                    <XCircle size={24} /> বাতিল করুন
+                    <RotateCcw size={24} className="group-hover:rotate-[-45deg] transition-transform" />
+                    বাতিল করুন
                   </button>
                 )}
               </div>
@@ -596,7 +602,6 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
             </div>
 
             <div id="printable-receipt" className="p-6 space-y-3 bg-white border-[6px] border-emerald-50 m-1.5 rounded-[1rem] flex flex-col">
-              {/* Screen Receipt Content (Same as previous, just kept for screen view) */}
               <div className="text-center space-y-1.5 border-b border-emerald-600/30 pb-3">
                 <div className="flex justify-center mb-0.5">
                   <ShieldCheck size={32} className="text-emerald-700" strokeWidth={2.5} />
@@ -666,11 +671,10 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
         </div>
       )}
 
-      {/* --- PRINT ONLY LAYOUT (Hidden on screen, block on print) --- */}
+      {/* --- PRINT ONLY LAYOUT --- */}
       {lastReceipt && (
         <div className="hidden print:block fixed inset-0 bg-white z-[1000] p-8">
             <div className="border-[3px] border-black p-8 h-full rounded-2xl relative">
-                {/* Watermark - Lighter opacity for better print contrast */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
                     <ShieldCheck size={400} />
                 </div>
@@ -725,7 +729,6 @@ const CollectionManager: React.FC<CollectionManagerProps> = ({
                         <p className="font-bold text-gray-600">সদস্যের স্বাক্ষর</p>
                     </div>
                     <div className="text-center relative">
-                        {/* Digital Signature Simulation - Improved contrast for print */}
                         <div className="signature-font text-3xl text-black absolute bottom-8 left-0 right-0 opacity-80 rotate-[-5deg]">
                            {lastReceipt.receivedBy || 'Kawsar'}
                         </div>

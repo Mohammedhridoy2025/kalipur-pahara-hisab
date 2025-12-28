@@ -49,4 +49,4 @@ export interface AppNotification {
   message: string;
 }
 
-export type ViewState = 'dashboard' | 'members' | 'collections' | 'expenses' | 'reports' | 'trash';
+export type ViewState = 'dashboard' | 'members' | 'collections' | 'expenses' | 'reports' | 'trash' | 'defaulters';

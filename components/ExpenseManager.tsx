@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Expense, ExpenseItem, AppNotification } from '../types';
 import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, ShoppingBag, Calendar, FileText, ShoppingCart, PlusCircle, Trash, CheckCircle2, Utensils, Coffee, AlertTriangle, XCircle, Lock } from 'lucide-react';
@@ -39,24 +40,31 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ expenses, initialOpen, 
     setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
-  const handlePreset = (type: 'biriyani' | 'salary' | 'snacks') => {
+  const handlePreset = (type: 'biriyani' | 'snacks') => {
     if (type === 'biriyani') {
       setCategory('Biriyani');
-      setDescription('বিরিয়ানি বাজার');
+      setDescription('বিরিয়ানি রান্নার বাজার');
       setItems([
-        { id: '1', name: 'চাল', amount: 0 },
-        { id: '2', name: 'মুরগি/গরু', amount: 0 },
-        { id: '3', name: 'মসলাপাতি', amount: 0 },
-        { id: '4', name: 'অন্যান্য', amount: 0 },
+        { id: '1', name: 'চাল (চিনিগুড়া/বাসমতি)', amount: 0 },
+        { id: '2', name: 'মাংস (মুরগি/গরু)', amount: 0 },
+        { id: '3', name: 'সয়াবিন তেল / ঘি', amount: 0 },
+        { id: '4', name: 'বিরিয়ানি মশলা ও অন্যান্য মশলা', amount: 0 },
+        { id: '5', name: 'পেঁয়াজ, কাঁচামরিচ ও আলু', amount: 0 },
+        { id: '6', name: 'আদা ও রসুন বাটা', amount: 0 },
+        { id: '7', name: 'টক দই ও দুধ', amount: 0 },
+        { id: '8', name: 'বাবুর্চি খরচ (যদি থাকে)', amount: 0 },
+        { id: '9', name: 'সালাদ ও অন্যান্য', amount: 0 },
       ]);
-    } else if (type === 'salary') {
-      setCategory('Salary');
-      setDescription('বেতন ও ভাতা');
-      setItems([{ id: '1', name: 'মাসিক বেতন', amount: 0 }]);
     } else if (type === 'snacks') {
       setCategory('Snacks');
-      setDescription('নাস্তা ও আপ্যায়ন');
-      setItems([{ id: '1', name: 'চা ও বিস্কুট', amount: 0 }]);
+      setDescription('নাস্তা ও বিকেলের আপ্যায়ন');
+      setItems([
+        { id: '1', name: 'মুড়ি ও চানাচুর', amount: 0 },
+        { id: '2', name: 'তেল ও মশলাপাতি', amount: 0 },
+        { id: '3', name: 'কাঁচা মরিচ, শশা ও খিরা', amount: 0 },
+        { id: '4', name: 'টেস্টিং সল্ট ও মেগি মশলা', amount: 0 },
+        { id: '5', name: 'বিস্কুট / কেক / অন্যান্য', amount: 0 },
+      ]);
     }
   };
 
@@ -66,7 +74,6 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ expenses, initialOpen, 
     setIsSubmitting(true);
     
     try {
-      // Logic for Notification trigger for large expenses (> 5000 BDT)
       if (totalAmount > 5000 && addNotification) {
          addNotification(
            'alert', 
@@ -87,7 +94,6 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ expenses, initialOpen, 
 
       await expensesCol.add(expenseData);
       
-      // Reset
       setDescription('');
       setCategory('Biriyani');
       setItems([{ id: '1', name: '', amount: 0 }]);
@@ -122,11 +128,7 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ expenses, initialOpen, 
       setConfirmDeleteId(null);
     } catch (error: any) {
       console.error("Error deleting expense:", error);
-      if (error.code === 'permission-denied') {
-        alert("পারমিশন নেই। অনুগ্রহ করে ফায়ারবেস রুলস চেক করুন।");
-      } else {
-        alert("মুছে ফেলতে সমস্যা হয়েছে।");
-      }
+      alert("মুছে ফেলতে সমস্যা হয়েছে।");
     } finally {
       setIsDeleting(null);
     }
@@ -279,17 +281,16 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ expenses, initialOpen, 
                       onChange={e => setCategory(e.target.value as any)}
                     >
                       <option value="Biriyani">বিরিয়ানি / খানাপিনা</option>
-                      <option value="Salary">বেতন / ভাতা</option>
                       <option value="Snacks">নাস্তা / আপ্যায়ন</option>
+                      <option value="Salary">বেতন / ভাতা</option>
                       <option value="Others">অন্যান্য</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Quick Presets */}
+                {/* Quick Presets - REMOVED SALARY PRESET */}
                 <div className="flex flex-wrap gap-2">
                    <button type="button" onClick={() => handlePreset('biriyani')} className="px-4 py-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-rose-100 transition-colors border border-rose-100">বিরিয়ানি সেটআপ</button>
-                   <button type="button" onClick={() => handlePreset('salary')} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-blue-100 transition-colors border border-blue-100">বেতন সেটআপ</button>
                    <button type="button" onClick={() => handlePreset('snacks')} className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-amber-100 transition-colors border border-amber-100">নাস্তা সেটআপ</button>
                 </div>
 
@@ -361,7 +362,7 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ expenses, initialOpen, 
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && isAdmin && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300] animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative animate-in zoom-in duration-300">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-sm shadow-2xl relative animate-in zoom-in duration-300">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mb-4">
                 <Trash2 size={32} />
